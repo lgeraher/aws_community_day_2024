@@ -14,13 +14,15 @@ phases:
     commands:
       - echo "Pre-build phase - preparing Lambda package..."
       - mkdir -p build
-      - cp -r ./Consumer/* ./build/
+      - cp -r ./Consumer/consumer.py ./build/
 
   build:
     commands:
       - echo "Building and packaging the Lambda function..."
       - cd build
+      - ls -la
       - zip -r ../aws_demo_lambda.zip .
+      - ls -la
 
   post_build:
     commands:
