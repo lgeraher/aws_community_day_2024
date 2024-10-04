@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    IMAGE_TAG: "${CODEBUILD_BUILD_NUMBER}"
+    IMAGE_TAG: "$CODEBUILD_RESOLVED_SOURCE_VERSION"
     AWS_REGION: "us-east-1"
     AWS_ACCOUNT_ID: "435053451664"
     ECR_REPOSITORY_NAME: "aws_community_day"
@@ -16,6 +16,8 @@ phases:
       - export REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NAME
       - echo "Repository URI is $REPOSITORY_URI"
       - echo "Build starting..."
+      - echo "Build number $CODEBUILD_BUILD_NUMBER"
+      - echo "Resolved source version $CODEBUILD_RESOLVED_SOURCE_VERSION"
 
   build:
     commands:
