@@ -11,23 +11,23 @@ env:
 phases:
   pre_build:
     commands:
-      - echo Logging in to Amazon ECR...
+      - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
       - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NAME
       - echo $REPOSITORY_URI
-      - echo Build starting...
+      - echo "Build starting..."
 
   build:
     commands:
-      - echo Building the Docker image...
+      - echo "Building the Docker image..."
       - docker build -t $ECR_REPOSITORY_NAME .
       - docker tag $ECR_REPOSITORY_NAME:latest $REPOSITORY_URI:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo Pushing the Docker image to ECR...
+      - echo "Pushing the Docker image to ECR..."
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo Image pushed to ECR: $REPOSITORY_URI:$IMAGE_TAG
-      - echo Updating Lambda function to use the new image...
+      - echo "Image pushed to ECR: $REPOSITORY_URI:$IMAGE_TAG"
+      - echo "Updating Lambda function to use the new image..."
       - aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --image-uri $REPOSITORY_URI:$IMAGE_TAG --region $AWS_REGION
-      - echo Lambda function updated to new image.
+      - echo "Lambda function updated to new image."
