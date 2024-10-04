@@ -1,0 +1,33 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+    commands:
+      - echo "Installing required system packages..."
+      - pip install --upgrade pip
+      - echo "Installing Python dependencies..."
+      - pip install -r requirements.txt -t .
+
+  pre_build:
+    commands:
+      - echo "Pre-build phase - preparing Lambda package..."
+      - mkdir -p build
+      - cp -r ./* ./build/
+
+  build:
+    commands:
+      - echo "Building and packaging the Lambda function..."
+      - cd build
+      - zip -r ../aws_demo_lambda.zip .
+
+  post_build:
+    commands:
+      - echo "Deploying the Lambda function..."
+      - aws lambda update-function-code --function-name aws_demo --zip-file fileb://aws_demo_lambda.zip --region us-east-1
+      - echo "Deployment complete."
+
+artifacts:
+  files:
+    - aws_demo_lambda.zip
