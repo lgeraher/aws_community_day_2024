@@ -27,7 +27,7 @@ phases:
     commands:
       - echo "Pushing the Docker image to ECR..."
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo "Image pushed to ECR: $REPOSITORY_URI:$IMAGE_TAG"
+      - echo "Image pushed to ECR $REPOSITORY_URI:$IMAGE_TAG"
       - echo "Updating Lambda function to use the new image..."
       - aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --image-uri $REPOSITORY_URI:$IMAGE_TAG --region $AWS_REGION
       - echo "Lambda function updated to new image."
