@@ -6,33 +6,27 @@ import json
 import logging
 from decimal import Decimal
 
-# Load environment variables from .env file
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+
+# Load environment variables (useful for local testing)
 load_dotenv()
 
 # DynamoDB configuration
-dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+dynamodb = boto3.resource('dynamodb', region_name=os.getenv('AWS_REGION', 'us-east-1'))
 table = dynamodb.Table('aws_demo')
 
 # Kafka Consumer configuration using environment variables
 conf = {
     'bootstrap.servers': os.getenv('BOOTSTRAP_SERVERS'),
-    'group.id': 'aws_demo_group',
+    'group.id': os.getenv('KAFKA_GROUP_ID', 'aws_demo_group'),
     'auto.offset.reset': 'earliest',
-    'enable.auto.commit': False,  # Disable auto-commit
+    'enable.auto.commit': False,  # Disable auto-commit for manual control
     'security.protocol': 'SASL_SSL',
     'sasl.mechanism': 'PLAIN',
     'sasl.username': os.getenv('SASL_USERNAME'),
     'sasl.password': os.getenv('SASL_PASSWORD')
 }
-
-# Create a Kafka consumer
-consumer = Consumer(conf)
-
-# Subscribe to the topic to consume messages from all partitions
-consumer.subscribe(['aws_demo'])
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
 
 # Function to convert floats to Decimals for DynamoDB
 def convert_to_decimal(item):
@@ -50,29 +44,55 @@ def store_invoice(invoice):
     table.put_item(Item=invoice)
     logging.info(f"Stored invoice with _id: {invoice['_id']}")
 
-# Consume messages from Kafka from all partitions
-try:
-    while True:
-        msg = consumer.poll(timeout=1.0)
+# Function to consume and process messages from Kafka
+def consume_messages():
+    # Create a Kafka consumer
+    consumer = Consumer(conf)
+    
+    # Subscribe to the topic to consume messages from all partitions
+    consumer.subscribe([os.getenv('KAFKA_TOPIC', 'aws_demo')])
 
-        if msg is None:
-            continue
-        if msg.error():
-            raise KafkaException(msg.error())
+    try:
+        while True:  # Continuous polling for messages
+            # Poll Kafka for messages (batch of 10 in this case)
+            messages = consumer.consume(num_messages=10, timeout=10.0)
 
-        invoice = json.loads(msg.value().decode('utf-8'))
-        partition = msg.partition()
+            if not messages:
+                logging.info("No messages received.")
+                continue
 
-        logging.info(f"Received message from partition {partition}")
+            for msg in messages:
+                if msg is None:
+                    continue
+                if msg.error():
+                    raise KafkaException(msg.error())
 
-        # Store the invoice in DynamoDB
-        store_invoice(invoice)
+                # Decode message and process
+                invoice = json.loads(msg.value().decode('utf-8'))
+                partition = msg.partition()
+                logging.info(f"Received message from partition {partition}")
 
-        # Manually commit the message offset after processing
-        consumer.commit(msg)
-        logging.info(f"Offset committed for partition {partition}")
+                # Store the invoice in DynamoDB
+                store_invoice(invoice)
 
-except KeyboardInterrupt:
-    logging.info("Consumer stopped.")
-finally:
-    consumer.close()
+                # Manually commit the message offset after processing
+                consumer.commit(msg)
+                logging.info(f"Offset committed for partition {partition}")
+
+    except KafkaException as e:
+        logging.error(f"Kafka error: {e}")
+    
+    except Exception as e:
+        logging.error(f"Error: {e}")
+    
+    finally:
+        consumer.close()
+
+# Lambda handler (for running in Lambda)
+def lambda_handler(event, context):
+    consume_messages()
+
+# Manual entry point for local execution
+if __name__ == "__main__":
+    logging.info("Running locally...")
+    consume_messages()
