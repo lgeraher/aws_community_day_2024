@@ -22,11 +22,13 @@ phases:
   build:
     commands:
       - echo "Building the Docker image..."
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NAME
       - docker build -t $REPOSITORY_URI:$IMAGE_TAG ./Consumer
 
   post_build:
     commands:
       - echo "Pushing the Docker image to ECR..."
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NAME
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo "Image pushed to ECR $REPOSITORY_URI:$IMAGE_TAG"
       - echo "Updating Lambda function to use the new image..."
