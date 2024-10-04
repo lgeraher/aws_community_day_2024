@@ -20,10 +20,8 @@ phases:
     commands:
       - echo "Building and packaging the Lambda function..."
       - cd build
-      - ls -la
       - zip -r ../aws_demo_lambda.zip .
       - cd ..
-      - ls -la
 
   post_build:
     commands:
