@@ -2,7 +2,6 @@ version: 0.2
 
 env:
   variables:
-    IMAGE_TAG: "${CODEBUILD_BUILD_NUMBER}"
     AWS_REGION: "us-east-1"
     AWS_ACCOUNT_ID: "435053451664"
     ECR_REPOSITORY_NAME: "aws_community_day"
@@ -12,17 +11,12 @@ env:
 phases:
   pre_build:
     commands:
-      - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-      - echo "Repository URI is $REPOSITORY_URI"
-      - echo "Build starting..."
-      - echo "Build number $CODEBUILD_BUILD_NUMBER"
-      - echo "Resolved source version $CODEBUILD_RESOLVED_SOURCE_VERSION"
 
   build:
     commands:
-      - echo "Building the Docker image..."
-      - docker build -t "${REPOSITORY_URI}:${IMAGE_TAG}" ./Consumer
+      - export IMAGE_TAG="${REPOSITORY_URI}:${CODEBUILD_BUILD_NUMBER}"
+      - docker build -t $IMAGE_TAG ./Consumer
 
   post_build:
     commands:
