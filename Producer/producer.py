@@ -1,25 +1,18 @@
-from confluent_kafka import Producer
-from dotenv import load_dotenv
-import os
-import time
+import boto3
 import json
 import uuid
 import random
+import os
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Kafka Producer configuration using environment variables
-conf = {
-    'bootstrap.servers': os.getenv('BOOTSTRAP_SERVERS'),
-    'security.protocol': 'SASL_SSL',
-    'sasl.mechanism': 'PLAIN',
-    'sasl.username': os.getenv('SASL_USERNAME'),
-    'sasl.password': os.getenv('SASL_PASSWORD')
-}
+# Initialize the SQS client
+sqs = boto3.client('sqs', region_name=os.getenv('AWS_REGION'))
 
-# Create a Kafka producer
-producer = Producer(conf)
+# SQS queue URL from .env file
+queue_url = os.getenv('SQS_QUEUE_URL')
 
 # Function to create a complex dummy invoice
 def create_dummy_invoice():
@@ -57,26 +50,21 @@ def create_dummy_invoice():
         "subtotal": subtotal,
         "tax": tax,
         "total": total,
-        "timestamp": time.time()
+        "timestamp": int(uuid.uuid1().time)
     }
     return invoice
 
-# Delivery callback for async message production
-def delivery_report(err, msg):
-    if err is not None:
-        print(f"Delivery failed: {err}")
-    else:
-        print(f"Message delivered to {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
+def send_message():
+    invoice = create_dummy_invoice()
+    message_body = json.dumps(invoice)
 
-# Produce 12 messages to Kafka at the same time
-try:
-    while True:
-        invoices = [create_dummy_invoice() for _ in range(100)]
-        for invoice in invoices:
-            invoice_json = json.dumps(invoice)
-            producer.produce('aws_demo', value=invoice_json, callback=delivery_report)
-        producer.flush() 
-        print("Produced 100 invoices concurrently")
-        time.sleep(1)
-except KeyboardInterrupt:
-    print("Producer stopped.")
+    # Send the invoice message to the SQS queue
+    response = sqs.send_message(
+        QueueUrl=queue_url,
+        MessageBody=message_body
+    )
+
+    print(f"Message sent to SQS with ID: {response['MessageId']}")
+
+if __name__ == "__main__":
+    send_message()
