@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-eks-consumer
+  namespace: aws-community-day
+  labels:
+    app: aws-eks-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-eks-consumer
+  template:
+    metadata:
+      labels:
+        app: aws-eks-consumer
+    spec:
+      containers:
+      - name: aws-eks-consumer
+        image: 435053451664.dkr.ecr.us-east-1.amazonaws.com/aws_community_day:demo_eks_2
+        ports:
+        - containerPort: 80
+        env:
+        - name: AWS_REGION
+          value: "us-east-1"
+        - name: SQS_QUEUE_URL
+          value: "https://sqs.us-east-1.amazonaws.com/435053451664/aws_community_day"
+        - name: DYNAMODB_TABLE_NAME
+          value: "aws_demo"
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+        command: ["python"]
+        args: ["consumer.py"]

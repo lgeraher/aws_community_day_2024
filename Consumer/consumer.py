@@ -2,6 +2,7 @@ import boto3
 import json
 import os
 import time
+import logging
 from decimal import Decimal
 from dotenv import load_dotenv
 
@@ -17,6 +18,14 @@ dynamodb_table_name = os.getenv('DYNAMODB_TABLE_NAME')
 # Reference the DynamoDB table
 table = dynamodb.Table(dynamodb_table_name)
 
+# Configure logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Configure logging for Lambda (CloudWatch) and Kubernetes (stdout)
+log_format = '%(asctime)s - %(levelname)s - %(message)s'
+logging.basicConfig(format=log_format)
+
 # Function to convert float to Decimal for DynamoDB (DynamoDB doesn't accept float)
 def convert_to_decimal(item):
     if isinstance(item, list):
@@ -30,8 +39,11 @@ def convert_to_decimal(item):
 # Function to store invoice in DynamoDB
 def store_invoice(invoice):
     invoice = convert_to_decimal(invoice)  # Convert any float values to Decimal
-    table.put_item(Item=invoice)
-    print(f"Stored invoice with _id: {invoice['_id']} in DynamoDB")
+    try:
+        table.put_item(Item=invoice)
+        logger.info(f"Stored invoice with _id: {invoice['_id']} in DynamoDB")
+    except Exception as e:
+        logger.error(f"Failed to store invoice with _id: {invoice['_id']} - {str(e)}")
 
 # Function to process SQS messages in Lambda
 def process_sqs_event(event):
@@ -39,12 +51,12 @@ def process_sqs_event(event):
     for record in event['Records']:
         # Process each message
         body = json.loads(record['body'])
-        print(f"Processing message: {json.dumps(body, indent=4)}")
+        logger.info(f"Processing message: {json.dumps(body, indent=4)}")
         
         # Store the invoice in DynamoDB
         store_invoice(body)
         
-        print("Message processed and stored in DynamoDB.")
+        logger.info("Message processed and stored in DynamoDB.")
 
 # Continuous polling loop for Kubernetes or local
 def continuous_polling():
@@ -64,7 +76,7 @@ def continuous_polling():
                 for message in response['Messages']:
                     # Process the message
                     body = json.loads(message['Body'])
-                    print(f"Received message: {json.dumps(body, indent=4)}")
+                    logger.info(f"Received message: {json.dumps(body, indent=4)}")
                     
                     # Store the invoice in DynamoDB
                     store_invoice(body)
@@ -74,20 +86,24 @@ def continuous_polling():
                         QueueUrl=queue_url,
                         ReceiptHandle=message['ReceiptHandle']
                     )
-                    print("Message deleted from SQS")
+                    logger.info("Message deleted from SQS")
             else:
-                print("No messages to process.")
+                logger.info("No messages to process.")
             
             time.sleep(2)  # Polling interval
     
     except KeyboardInterrupt:
-        print("\nPolling stopped by user (Ctrl+C). Exiting gracefully...")
+        logger.warning("Polling stopped by user (Ctrl+C). Exiting gracefully...")
+    except Exception as e:
+        logger.error(f"An error occurred during polling: {str(e)}")
 
 # Lambda handler for AWS Lambda
 def lambda_handler(event, context):
     # Process SQS event in Lambda
+    logger.info("Lambda function triggered.")
     process_sqs_event(event)
 
 # Local entry point for testing or Kubernetes
 if __name__ == "__main__":
+    logger.info("Starting continuous polling in local/Kubernetes environment...")
     continuous_polling()
