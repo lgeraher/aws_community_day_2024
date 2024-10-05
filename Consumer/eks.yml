@@ -5,7 +5,7 @@ env:
     AWS_REGION: "us-east-1"
     AWS_ACCOUNT_ID: "435053451664"
     ECR_REPOSITORY_NAME: "aws_community_day"
-    EKS_DEPLOYMENT_NAME: "aws_eks_consumer"
+    EKS_DEPLOYMENT_NAME: "aws-eks-consumer"  # Match the name from your manifest
     EKS_NAMESPACE: "aws-community-day"
     CLUSTER_NAME: "aws-community-day"
 
@@ -19,12 +19,14 @@ phases:
 
   build:
     commands:
-      - echo $IMAGE_URI
+      - echo "Building the Docker image with tag: $IMAGE_URI"
       - docker build -t $IMAGE_URI ./Consumer
 
   post_build:
     commands:
+      - echo "Pushing the Docker image to ECR..."
       - docker push $IMAGE_URI
+      - echo "Docker image pushed: $IMAGE_URI"
       - echo "Updating Kubernetes deployment..."
       - kubectl set image deployment/$EKS_DEPLOYMENT_NAME $EKS_DEPLOYMENT_NAME=$IMAGE_URI -n $EKS_NAMESPACE
-      - echo "Kubernetes deployment updated."
+      - echo "Kubernetes deployment updated successfully."
