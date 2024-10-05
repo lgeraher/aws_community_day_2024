@@ -1,0 +1,30 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_REGION: "us-east-1"
+    AWS_ACCOUNT_ID: "435053451664"
+    ECR_REPOSITORY_NAME: "aws_community_day"
+    EKS_DEPLOYMENT_NAME: "aws_eks_consumer"
+    EKS_NAMESPACE: "aws-community-day"
+    CLUSTER_NAME: "aws-community-day"
+
+phases:
+  pre_build:
+    commands:
+      - export IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NAME:demo_eks_$CODEBUILD_BUILD_NUMBER"
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - echo "Retrieving Kubernetes config for the EKS cluster..."
+      - aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+
+  build:
+    commands:
+      - echo $IMAGE_URI
+      - docker build -t $IMAGE_URI ./Consumer
+
+  post_build:
+    commands:
+      - docker push $IMAGE_URI
+      - echo "Updating Kubernetes deployment..."
+      - kubectl set image deployment/$EKS_DEPLOYMENT_NAME $EKS_DEPLOYMENT_NAME=$IMAGE_URI -n $EKS_NAMESPACE
+      - echo "Kubernetes deployment updated."
