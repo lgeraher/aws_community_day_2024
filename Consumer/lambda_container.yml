@@ -6,7 +6,7 @@ env:
     AWS_ACCOUNT_ID: "435053451664"
     ECR_REPOSITORY_NAME: "aws_community_day"
     LAMBDA_FUNCTION_NAME: "aws_lambda_container"
-    REPOSITORY_URI: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NAME
+    IMAGE_URI: "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NAME:demo:$CODEBUILD_BUILD_NUMBER""
 
 phases:
   pre_build:
@@ -15,8 +15,8 @@ phases:
 
   build:
     commands:
-      - export IMAGE_TAG=${REPOSITORY_URI}:${CODEBUILD_BUILD_NUMBER}
-      - docker build -t $IMAGE_TAG ./Consumer
+      - echo $IMAGE_URI
+      - docker build -t $IMAGE_URI ./Consumer
 
   post_build:
     commands:
