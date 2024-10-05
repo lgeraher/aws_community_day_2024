@@ -76,7 +76,6 @@ def continuous_polling():
                 for message in response['Messages']:
                     # Process the message
                     body = json.loads(message['Body'])
-                    logger.info(f"Received message: {json.dumps(body, indent=4)}")
                     
                     # Store the invoice in DynamoDB
                     store_invoice(body)

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: aws-eks-consumer
-        image: 435053451664.dkr.ecr.us-east-1.amazonaws.com/aws_community_day:demo_eks_2
+        image: 435053451664.dkr.ecr.us-east-1.amazonaws.com/aws_community_day:demo_eks_3
         ports:
         - containerPort: 80
         env:
