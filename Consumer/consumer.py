@@ -57,7 +57,7 @@ def continuous_polling():
             response = sqs.receive_message(
                 QueueUrl=queue_url,
                 MaxNumberOfMessages=1,
-                WaitTimeSeconds=10  # Long polling
+                WaitTimeSeconds=10
             )
 
             if 'Messages' in response:

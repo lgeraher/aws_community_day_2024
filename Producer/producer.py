@@ -64,7 +64,7 @@ def send_message():
         MessageBody=message_body
     )
 
-    print(f"Message sent to SQS with ID: {response['MessageId']}")
+    print(f"Message sent to SQS with ID: {invoice["_id"]}")
 
 if __name__ == "__main__":
     send_message()
