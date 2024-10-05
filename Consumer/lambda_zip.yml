@@ -26,7 +26,7 @@ phases:
   post_build:
     commands:
       - echo "Deploying the Lambda function..."
-      - aws lambda update-function-code --function-name aws_demo --zip-file fileb://aws_demo_lambda.zip --region us-east-1
+      - aws lambda update-function-code --function-name aws_lambda_zip --zip-file fileb://aws_demo_lambda.zip --region us-east-1
       - echo "Deployment complete."
 
 artifacts:

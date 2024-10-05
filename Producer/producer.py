@@ -54,17 +54,19 @@ def create_dummy_invoice():
     }
     return invoice
 
-def send_message():
-    invoice = create_dummy_invoice()
-    message_body = json.dumps(invoice)
+def send_messages(num_messages):
+    for i in range(num_messages):
+        invoice = create_dummy_invoice()
+        message_body = json.dumps(invoice)
 
-    # Send the invoice message to the SQS queue
-    response = sqs.send_message(
-        QueueUrl=queue_url,
-        MessageBody=message_body
-    )
+        # Send the invoice message to the SQS queue
+        response = sqs.send_message(
+            QueueUrl=queue_url,
+            MessageBody=message_body
+        )
 
-    print(f"Message sent to SQS with ID: {invoice["_id"]}")
+        print(f"Message {i + 1} sent to SQS with ID: {invoice['_id']}")
 
 if __name__ == "__main__":
-    send_message()
+    num_messages = int(input("Enter the number of messages to send: "))
+    send_messages(num_messages)
