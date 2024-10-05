@@ -20,10 +20,5 @@ phases:
 
   post_build:
     commands:
-      - echo "Pushing the Docker image to ECR..."
-      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NAME
-      - docker push "$REPOSITORY_URI:$IMAGE_TAG"
-      - echo "Image pushed to ECR $REPOSITORY_URI:$IMAGE_TAG"
-      - echo "Updating Lambda function to use the new image..."
-      - aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --image-uri "$REPOSITORY_URI:$IMAGE_TAG" --region $AWS_REGION
-      - echo "Lambda function updated to new image."
+      - docker push $IMAGE_URI
+      - aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME --image-uri "$IMAGE_URI" --region $AWS_REGION
